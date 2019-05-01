@@ -13,12 +13,24 @@ import {
   HostBinding,
   AfterViewInit,
   PLATFORM_ID,
-  Inject
+  Inject,
+  forwardRef,
+  OnInit
 } from '@angular/core';
 
 import { isPlatformBrowser } from '@angular/common';
 
-import { Observable, Subject, combineLatest, merge, from, fromEvent, BehaviorSubject, asyncScheduler } from 'rxjs';
+import {
+  Observable,
+  Subject,
+  combineLatest,
+  merge,
+  from,
+  fromEvent,
+  BehaviorSubject,
+  asyncScheduler,
+  noop
+} from 'rxjs';
 
 import {
   switchMap,
@@ -64,6 +76,7 @@ import {
   getMousePosition,
   hasMinimumSize
 } from './utils';
+import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
   selector: 'dts-select-container',
@@ -71,6 +84,13 @@ import {
   host: {
     class: 'dts-select-container'
   },
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => SelectContainerComponent),
+      multi: true
+    }
+  ],
   template: `
     <ng-content></ng-content>
     <div
@@ -82,7 +102,7 @@ import {
   `,
   styleUrls: ['./select-container.component.scss']
 })
-export class SelectContainerComponent implements AfterViewInit, OnDestroy {
+export class SelectContainerComponent implements AfterViewInit, OnDestroy, OnInit {
   host: SelectContainerHost;
   selectBoxStyles$: Observable<SelectBox<string>>;
   selectBoxClasses$: Observable<{ [key: string]: boolean }>;
@@ -135,9 +155,13 @@ export class SelectContainerComponent implements AfterViewInit, OnDestroy {
 
   private _tmpItems = new Map<SelectItemDirective, Action>();
 
-  private _selectedItems$ = new BehaviorSubject<Array<any>>([]);
+  private _selectedItems$;
   private updateItems$ = new Subject<UpdateAction>();
   private destroy$ = new Subject<void>();
+
+  // Control Value Accessor Methods
+  private onTouchedCallback: () => void = noop;
+  private onChangeCallback: (_: any) => void = noop;
 
   constructor(
     @Inject(PLATFORM_ID) private platformId,
@@ -147,6 +171,45 @@ export class SelectContainerComponent implements AfterViewInit, OnDestroy {
     private ngZone: NgZone
   ) {}
 
+  //get accessor
+  get value(): any {
+    return this.value;
+  }
+
+  //set accessor including call the onchange callback
+  set value(v: any) {
+    if (v !== this.selectedItems) {
+      this.value = v;
+      this.onChangeCallback(v);
+    }
+  }
+
+  // Allows Angular to update the model (rating).
+  // Update the model and changes needed for the view here.
+  writeValue(value): void {
+    this.value = value;
+    this.onChangeCallback(this.value);
+  }
+
+  // Allows Angular to register a function to call when the model (rating) changes.
+  // Save the function as a property to call later here.
+  registerOnChange(fn: (rating: number) => void): void {
+    this.onChangeCallback = fn;
+  }
+
+  // Allows Angular to register a function to call when the input has been touched.
+  // Save the function as a property to call later here.
+  registerOnTouched(fn: () => void): void {
+    this.onTouchedCallback = fn;
+  }
+
+  // Allows Angular to disable the input.
+  setDisabledState(isDisabled: boolean): void {
+    this.disabled = isDisabled;
+  }
+  ngOnInit() {
+    this._selectedItems$ = new BehaviorSubject<Array<any>>([]);
+  }
   ngAfterViewInit() {
     if (isPlatformBrowser(this.platformId)) {
       this.host = this.hostElementRef.nativeElement;
@@ -323,11 +386,14 @@ export class SelectContainerComponent implements AfterViewInit, OnDestroy {
       )
       .subscribe({
         next: selectedItems => {
+          setTimeout(() => {
+            this.value = selectedItems;
+          }, 2000);
           this.selectedItemsChange.emit(selectedItems);
           this.select.emit(selectedItems);
         },
         complete: () => {
-          this.selectedItemsChange.emit([]);
+          this.selectedItemsChange.emit(this.value);
         }
       });
   }

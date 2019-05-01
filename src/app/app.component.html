@@ -1,14 +1,21 @@
 <app-header></app-header>
 <main>
+  <section>
+    <app-form></app-form>
+  </section>
   <section *ngIf="isDesktop">
     <h3>Keyboard Shortcuts</h3>
     <mat-tab-group [@.disabled]="true">
       <mat-tab>
-        <ng-template mat-tab-label> <mat-icon svgIcon="apple"></mat-icon> </ng-template>
+        <ng-template mat-tab-label>
+          <mat-icon svgIcon="apple"></mat-icon>
+        </ng-template>
         <app-shortcuts os="mac"></app-shortcuts>
       </mat-tab>
       <mat-tab>
-        <ng-template mat-tab-label> <mat-icon svgIcon="windows"></mat-icon> </ng-template>
+        <ng-template mat-tab-label>
+          <mat-icon svgIcon="windows"></mat-icon>
+        </ng-template>
         <app-shortcuts os="windows"></app-shortcuts>
       </mat-tab>
     </mat-tab-group>
@@ -30,14 +37,9 @@
     </button>
 
     <div class="drag-area">
-      <dts-select-container
-        #selectContainer="dts-select-container"
-        [selectMode]="selectMode"
-        [(selectedItems)]="selectedDocuments"
-        [disabled]="disable"
-        [selectOnDrag]="selectOnDrag"
-        [selectWithShortcut]="selectWithShortcut"
-      >
+      <dts-select-container #selectContainer="dts-select-container" [selectMode]="selectMode"
+        [(selectedItems)]="selectedDocuments" [disabled]="disable" [selectOnDrag]="selectOnDrag"
+        [selectWithShortcut]="selectWithShortcut">
         <mat-grid-list cols="4" rowHeight="200px" gutterSize="20px">
           <mat-grid-tile [dtsSelectItem]="document" *ngFor="let document of documents">
             {{ document.name }}
@@ -62,7 +64,10 @@
       <span>Mobile Demo</span> <a href="https://github.com/d3lm/ngx-drag-to-select/blob/master/src/app/phone">SOURCE</a>
     </h3>
 
-    <div class="mobile-wrapper"><app-phone></app-phone></div>
+    <div class="mobile-wrapper">
+      <app-phone></app-phone>
+    </div>
   </section>
+
 </main>
 <app-footer></app-footer>
